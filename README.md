@@ -33,5 +33,6 @@ username:user
 
 password:user123
 
-
+#Note
+buat folder baru bernama announcements di direktori ini untuk menyimpan file upload
 
