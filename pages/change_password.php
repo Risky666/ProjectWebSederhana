@@ -1,40 +1,117 @@
 <?php
-session_start(); // Memulai sesi .
-include '../includes/db.php'; //  koneksi database.
+session_start();
+include '../includes/db.php';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') { // Mengecek apakah metode permintaan adalah POST.
-    $new_password = $_POST['new_password']; // Mengambil input password baru dari form.
-    $user_id = $_SESSION['user_id']; // Mengambil user ID dari sesi untuk menentukan user yang ingin diubah password-nya.
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $new_password = $_POST['new_password'];
+    $user_id = $_SESSION['user_id'];
 
-    // Query SQL untuk memperbarui password user berdasarkan ID.
     $sql = "UPDATE users SET password = '$new_password' WHERE id = $user_id";
-    if ($conn->query($sql) === TRUE) { // Mengeksekusi query dan mengecek jika berhasil.
-        $success = "Password berhasil diganti."; // menampilkan Pesan ketika berhasil diganti .
-    } else { // Jika terjadi kesalahan pada query.
-        $error = "Terjadi kesalahan."; // tampilkan Pesan error.
+    if ($conn->query($sql) === TRUE) {
+        $success = "Password berhasil diganti.";
+    } else {
+        $error = "Terjadi kesalahan.";
     }
 }
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-    <link rel="stylesheet" href="../css/style.css"> 
-    <title>Ganti Password</title> 
+    <meta charset="UTF-8">
+    <title>Ganti Password</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #1e1e1e;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h2 {
+            color: #ff3b3f;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #ccc;
+        }
+
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 8px;
+            background-color: #2a2a2a;
+            color: #f5f5f5;
+            font-size: 16px;
+        }
+
+        input[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            background-color: #ff3b3f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #e63237;
+        }
+
+        .message {
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .message.success {
+            color: #00e676;
+        }
+
+        .message.error {
+            color: #ff3b3f;
+        }
+    </style>
 </head>
 <body>
-<div class="container"> <!-- Container utama untuk form ganti password. -->
-    <h2>Ganti Password</h2> <!-- Header halaman. -->
-    <?php
-    // Menampilkan pesan sukses atau error jika ada.
-    if (!empty($success)) echo "<p style='color: green;'>$success</p>";
-    if (!empty($error)) echo "<p style='color: red;'>$error</p>";
-    ?>
-    <form method="POST"> <!-- Form untuk ganti password, menggunakan metode POST. -->
-        <label>Password Baru</label> <!-- Label untuk input password baru. -->
-        <input type="password" name="new_password" required> <!-- Input untuk password baru, wajib diisi. -->
-        <input type="submit" value="Ganti Password"> <!-- Tombol submit untuk mengirim form. -->
-    </form>
-</div>
+    <div class="container">
+        <h2>Ganti Password</h2>
+        <?php if (!empty($success)): ?>
+            <p class="message success"><?= $success ?></p>
+        <?php elseif (!empty($error)): ?>
+            <p class="message error"><?= $error ?></p>
+        <?php endif; ?>
+
+        <form method="POST">
+            <label for="new_password">Password Baru</label>
+            <input type="password" name="new_password" id="new_password" required>
+            <input type="submit" value="Ganti Password">
+        </form>
+    </div>
 </body>
 </html>

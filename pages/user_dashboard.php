@@ -1,190 +1,221 @@
 <?php
-session_start(); // Memulai sesi .
-include '../includes/db.php'; //  koneksi database.
+session_start();
+include '../includes/db.php';
 
-if ($_SESSION['role'] != 'user') { // Mengecek apakah role pengguna bukan 'user'.
-    header('Location: login.php'); // Jika bukan user maka akan diarahkan ke halaman login.
-    exit; // Menghentikan script .
+if ($_SESSION['role'] != 'user') {
+    header('Location: login.php');
+    exit;
 }
 
-$user_id = $_SESSION['user_id']; // Mendapatkan user ID dari sesi.
+$user_id = $_SESSION['user_id'];
 
+// Tambah pengumuman
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_announcement'])) {
+    $title = $_POST['title'];
+    $content = $_POST['content'];
+    $category = $_POST['category'];
+    $file_path = null;
+    $image_path = null;
 
-
-// Tambahkan pengumuman
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_announcement'])) { // Mengecek jika form tambah pengumuman disubmit.
-    $title = $_POST['title']; // Mengambil input judul.
-    $content = $_POST['content']; // Mengambil input isi pengumuman.
-    $category = $_POST['category']; // Mengambil input kategori.
-    $file_path = null; // Inisialisasi file path sebagai null.
-
-    if (isset($_FILES['file']) && $_FILES['file']['error'] == 0) { // Mengecek jika file diunggah tanpa error.
-        $file_name = basename($_FILES['file']['name']); // Mendapatkan nama file.
-        $file_tmp = $_FILES['file']['tmp_name']; // Mendapatkan path sementara file.
-        $file_path = '../announcements/' . $file_name; // Menentukan path tujuan yaitu announcements untuk menyimpan file yang di upload.
-
-        // Simpan file ke folder tujuan.
-        move_uploaded_file($file_tmp, $file_path); // Memindahkan file yang diunggah ke path tujuan.
+    // Upload file
+    if (isset($_FILES['file']) && $_FILES['file']['error'] == 0) {
+        $file_name = basename($_FILES['file']['name']);
+        $file_tmp = $_FILES['file']['tmp_name'];
+        $file_path = '../announcements/' . $file_name;
+        move_uploaded_file($file_tmp, $file_path);
     }
 
-    // Gunakan Prepared Statement untuk menambahkan pengumuman ke database.
-    $stmt = $conn->prepare("INSERT INTO announcements (user_id, title, content, category, file_path) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("issss", $user_id, $title, $content, $category, $file_path); // Mengikat parameter.
-
-    if ($stmt->execute()) { // Mengeksekusi query.
-        echo "<script>alert('Pengumuman berhasil ditambahkan!');</script>"; // jika pengumuman berhasil di tambah maka akan Menampilkan pesan sukses.
-    } else { // Jika terjadi error.
-        echo "<script>alert('Gagal menambahkan pengumuman: " . $stmt->error . "');</script>"; // jika gagal Menampilkan pesan error.
+    // Upload gambar
+    if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+        $img_name = basename($_FILES['image']['name']);
+        $img_tmp = $_FILES['image']['tmp_name'];
+        $image_path = '../announcements/' . $img_name;
+        move_uploaded_file($img_tmp, $image_path);
     }
 
-    $stmt->close(); // Menutup statement.
+    $stmt = $conn->prepare("INSERT INTO announcements (user_id, title, content, category, file_path, image_path) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("isssss", $user_id, $title, $content, $category, $file_path, $image_path);
+
+    if ($stmt->execute()) {
+        echo "<script>alert('Pengumuman berhasil ditambahkan!');</script>";
+    } else {
+        echo "<script>alert('Gagal menambahkan pengumuman: " . $stmt->error . "');</script>";
+    }
+
+    $stmt->close();
 }
-
-
 
 // Hapus pengumuman
-if (isset($_GET['delete'])) { 
-    $announcement_id = $_GET['delete']; // Mendapatkan ID pengumuman dari parameter 'delete'.
-    $stmt = $conn->prepare("DELETE FROM announcements WHERE id = ? AND user_id = ?"); // Query untuk menghapus pengumuman.
-    $stmt->bind_param("ii", $announcement_id, $user_id); // Mengikat parameter.
-
-    if ($stmt->execute()) { // Mengeksekusi query.
-        echo "<script>alert('Pengumuman berhasil dihapus!');</script>"; // Menampilkan pesan sukses.
-    } else { // Jika terjadi error.
-        echo "<script>alert('Gagal menghapus pengumuman: " . $stmt->error . "');</script>"; // Menampilkan pesan error.
-    }
-
-    $stmt->close(); // Menutup statement.
-    header('Location: user_dashboard.php'); // Redirect ke dashboard.
-    exit; // Menghentikan eksekusi script.
+if (isset($_GET['delete'])) {
+    $announcement_id = $_GET['delete'];
+    $stmt = $conn->prepare("DELETE FROM announcements WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $announcement_id, $user_id);
+    $stmt->execute();
+    $stmt->close();
+    header('Location: user_dashboard.php');
+    exit;
 }
 
 // Edit pengumuman
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_announcement'])) { // Mengecek jika form edit pengumuman disubmit.
-    $announcement_id = $_POST['announcement_id']; // Mendapatkan ID pengumuman yang ingin diubah.
-    $title = $_POST['title']; // Mengambil input judul baru.
-    $content = $_POST['content']; // Mengambil input isi pengumuman baru.
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_announcement'])) {
+    $announcement_id = $_POST['announcement_id'];
+    $title = $_POST['title'];
+    $content = $_POST['content'];
 
-    // Query untuk memperbarui pengumuman berdasarkan ID dan user ID.
     $stmt = $conn->prepare("UPDATE announcements SET title = ?, content = ? WHERE id = ? AND user_id = ?");
-    $stmt->bind_param("ssii", $title, $content, $announcement_id, $user_id); // Mengikat parameter.
-
-    if ($stmt->execute()) { // Mengeksekusi query.
-        echo "<script>alert('Pengumuman berhasil diupdate!');</script>"; // Menampilkan pesan sukses.
-    } else { // Jika terjadi error.
-        echo "<script>alert('Gagal mengupdate pengumuman: " . $stmt->error . "');</script>"; // Menampilkan pesan error.
-    }
-
-    $stmt->close(); // Menutup statement.
-    header('Location: user_dashboard.php'); // Redirect ke dashboard.
-    exit; // Menghentikan eksekusi script.
+    $stmt->bind_param("ssii", $title, $content, $announcement_id, $user_id);
+    $stmt->execute();
+    $stmt->close();
+    header('Location: user_dashboard.php');
+    exit;
 }
 
-
-
-// Ambil semua pengumuman pengguna
-$stmt = $conn->prepare("SELECT * FROM announcements WHERE user_id = ? ORDER BY created_at DESC"); // Query untuk mengambil pengumuman berdasarkan user ID.
-$stmt->bind_param("i", $user_id); // Mengikat parameter.
-$stmt->execute(); // Mengeksekusi query.
-$announcements = $stmt->get_result(); // Mendapatkan hasil query.
+// Ambil pengumuman
+$stmt = $conn->prepare("SELECT * FROM announcements WHERE user_id = ? ORDER BY created_at DESC");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$announcements = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="stylesheet" href="../css/style.css"> <!-- CSS  -->
-    <title>User Dashboard</title> 
+    <title>User Dashboard</title>
+    <style>
+        body {
+            background: #121212;
+            color: #f5f5f5;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: #1e1e1e;
+            border-radius: 10px;
+        }
+        h2, h3 {
+            color: #ff3b3f;
+            text-align: center;
+        }
+        label {
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            background-color: #2a2a2a;
+            color: #fff;
+            border: 1px solid #444;
+            margin-bottom: 10px;
+        }
+        input[type="submit"], button {
+            background-color: #ff3b3f;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+        }
+        a {
+            color: #ff3b3f;
+        }
+        li {
+            background-color: #2a2a2a;
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        img.preview {
+            max-width: 100%;
+            height: auto;
+            margin-top: 10px;
+            border-radius: 6px;
+        }
+    </style>
 </head>
 <body>
+<div class="container">
+    <h2>Dashboard</h2>
+    <p>Selamat Datang di Forum Chief !!!! </p>
+    <p>ini adalah forum sharing tentang CyberSecurity, tools Cyber, dan Attack!!! </p>
+    <p>Selamat belajar chief!!!</p>
 
-<div class="container"> 
-    <h2>User Dashboard</h2> 
-    <p>Selamat datang, User!</p> 
-
-    <!-- Tambah Pengumuman -->
     <h3>Tambah Pengumuman</h3>
-    <form method="POST" enctype="multipart/form-data"> <!-- Form untuk menambahkan pengumuman,  upload file. -->
+    <form method="POST" enctype="multipart/form-data">
+        <label>Judul</label>
+        <input type="text" name="title" required>
 
-        <label>Judul</label> <!-- Label untuk input judul. -->
+        <label>Isi Pengumuman</label>
+        <textarea name="content" rows="4"></textarea>
 
-        <input type="text" name="title" required> <!-- Input untuk judul pengumuman. -->
-
-        <label>Isi Pengumuman</label> <!-- Label untuk input isi pengumuman. -->
-
-        <textarea name="content" rows="4"></textarea> <!-- Textarea untuk isi pengumuman. -->
-
-        <label>Kategori</label> <!-- Label untuk input kategori. -->
-
-        <select name="category" required> <!-- Dropdown untuk memilih kategori. -->
+        <label>Kategori</label>
+        <select name="category">
             <option value="Informasi">Informasi</option>
-            <option value="Pengumuman">Pengumuman</option>
-            <option value="Lainnya">Lainnya</option>
+            <option value="Attack!!!">Attack!!!</option>
+            <option value="Tools">Tools</option>
         </select>
 
-        <label>Upload File</label> <!-- Label untuk input file. -->
+        <label>Upload File (Opsional)</label>
+        <input type="file" name="file">
 
-        <input type="file" name="file"> <!-- Input untuk file yang akan diupload. -->
+        <label>Upload Gambar</label>
+        <input type="file" name="image" accept="image/*">
 
-        <input type="submit" name="add_announcement" value="Tambah Pengumuman"> <!-- Tombol submit. -->
+        <input type="submit" name="add_announcement" value="Tambah Pengumuman">
     </form>
 
-    <!-- Daftar Pengumuman -->
     <h3>Daftar Pengumuman</h3>
-    <?php if ($announcements->num_rows > 0): ?> <!-- Mengecek jika ada pengumuman. -->
-        <ul>
-            <?php while ($row = $announcements->fetch_assoc()): ?> <!-- Loop untuk setiap pengumuman. -->
-                <li>
-                    <h4><?= $row['title'] ?></h4> <!-- Menampilkan judul pengumuman. -->
-                    <p><?= nl2br($row['content']) ?></p> <!-- Menampilkan isi pengumuman dengan line break. -->
-                    <p>Kategori: <?= $row['category'] ?></p> <!-- Menampilkan kategori pengumuman. -->
-                    <?php if (!empty($row['file_path'])): ?> <!-- Mengecek jika ada file terkait pengumuman. -->
-                        <a href="<?= $row['file_path'] ?>" target="_blank">Download File</a> <!-- Link untuk mendownload file. -->
-                    <?php endif; ?>
-                    <br>
-                    <!-- Tombol Edit -->
-                    <button onclick="openEditForm(<?= $row['id'] ?>, '<?= $row['title'] ?>', '<?= $row['content'] ?>')">Edit</button>
-                    <!-- Tombol Hapus -->
-                    <a href="?delete=<?= $row['id'] ?>" onclick="return confirm('Yakin ingin menghapus pengumuman ini?')">Hapus</a>
-                    <hr>
-                </li>
-            <?php endwhile; ?>
-        </ul>
-    <?php else: ?> <!-- Jika tidak ada pengumuman. -->
-        <p>Belum ada pengumuman.</p>
-    <?php endif; ?>
+    <ul>
+        <?php while ($row = $announcements->fetch_assoc()): ?>
+            <li>
+                <h4><?= htmlspecialchars($row['title']) ?></h4>
+                <p><?= nl2br(htmlspecialchars($row['content'])) ?></p>
+                <p>Kategori: <?= $row['category'] ?></p>
 
-    
-    <!-- Form Edit Pengumuman -->
-    <div id="edit-form" style="display: none;"> <!-- Form untuk mengedit pengumuman. -->
+                <?php if (!empty($row['image_path'])): ?>
+                    <img src="<?= $row['image_path'] ?>" alt="Gambar Pengumuman" class="preview">
+                <?php endif; ?>
+
+                <?php if (!empty($row['file_path'])): ?>
+                    <p><a href="<?= $row['file_path'] ?>" target="_blank">Download File</a></p>
+                <?php endif; ?>
+
+                <button onclick="openEditForm(<?= $row['id'] ?>, '<?= addslashes($row['title']) ?>', '<?= addslashes($row['content']) ?>')">Edit</button>
+                <a href="?delete=<?= $row['id'] ?>" onclick="return confirm('Yakin ingin menghapus?')">Hapus</a>
+            </li>
+        <?php endwhile; ?>
+    </ul>
+
+    <div id="edit-form" style="display:none;">
         <h3>Edit Pengumuman</h3>
         <form method="POST">
-            <input type="hidden" name="announcement_id" id="edit-announcement-id"> <!-- Input tersembunyi untuk ID pengumuman. -->
-            <label>Judul</label> <!-- Label untuk input judul. -->
-            <input type="text" name="title" id="edit-title" required> <!-- Input untuk judul baru. -->
-            <label>Isi Pengumuman</label> <!-- Label untuk input isi pengumuman baru. -->
-            <textarea name="content" id="edit-content" rows="4"></textarea> <!-- Textarea untuk isi pengumuman baru. -->
-            <input type="submit" name="edit_announcement" value="Simpan Perubahan"> <!-- Tombol submit untuk menyimpan perubahan. -->
-            <button type="button" onclick="closeEditForm()">Batal</button> <!-- Tombol untuk membatalkan edit. -->
+            <input type="hidden" name="announcement_id" id="edit-id">
+            <label>Judul</label>
+            <input type="text" name="title" id="edit-title">
+            <label>Isi</label>
+            <textarea name="content" id="edit-content" rows="4"></textarea>
+            <input type="submit" name="edit_announcement" value="Simpan">
+            <button type="button" onclick="closeEditForm()">Batal</button>
         </form>
     </div>
 
-    <script>
-        function openEditForm(id, title, content) { // Fungsi untuk membuka form edit dengan data pengumuman.
-            document.getElementById('edit-form').style.display = 'block';
-            document.getElementById('edit-announcement-id').value = id;
-            document.getElementById('edit-title').value = title;
-            document.getElementById('edit-content').value = content;
-        }
-
-        function closeEditForm() { // Fungsi untuk menutup form edit.
-            document.getElementById('edit-form').style.display = 'none';
-        }
-    </script>
-
     <br>
-    <a href="change_password.php">Ganti Password</a> <!-- Link ke halaman ganti password. -->
-    <br><br>
-    <a href="../logout.php">Logout</a> <!-- Link untuk logout. -->
+    <a href="change_password.php">Ganti Password</a> |
+    <a href="../logout.php">Logout</a>
 </div>
+
+<script>
+    function openEditForm(id, title, content) {
+        document.getElementById("edit-id").value = id;
+        document.getElementById("edit-title").value = title;
+        document.getElementById("edit-content").value = content;
+        document.getElementById("edit-form").style.display = "block";
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+    function closeEditForm() {
+        document.getElementById("edit-form").style.display = "none";
+    }
+</script>
 </body>
 </html>

@@ -1,28 +1,13 @@
-# ProjectWebSederhana
-Ini adalah project web sederhana 
-# Alur kerja program
+# Tujuan Dibuatnya web ini
+Web ini dibuat untuk sharing write up pentest, dan informasi seputar cyber security.
+tapi diweb ini terdapat beberapa kerentanan yang bisa di eksploitasi.
+
+# Alur kerja Web
 1.user masuk kehalaman login
 
-2.jika user adalah admin maka akan diarahkan ke dashboard admin. jika user masuk sebagai user maka akan diarahkan ke dashboard user.
+2.jika user adalah admin maka akan diarahkan ke dashboard admin. jika user masuk sebagai user maka akan diarahkan ke dashboard user. Disini masing masing Role bisa melakukan aktifitas sesuai rolenya.
 
 3.ketika user/admin logout akan kembali ke menu login.
-
-   
-# fitur
-Dashboard admin:
-
-1.Crud 
-
-2.logout
-
-3.reset password
-
-Dashboard User:
-
-1.reset password
-
-2.logout.
-
 
 # Login
 username:admin

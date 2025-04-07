@@ -1,105 +1,206 @@
 <?php
-session_start(); // Memulai sesi
-include '../includes/db.php'; // koneksi database
+session_start();
+include '../includes/db.php';
 
-// Periksa apakah pengguna adalah admin
-if ($_SESSION['role'] != 'admin') { // Jika role bukan admin
-    header('Location: login.php'); // Arahkan ke halaman login
-    exit; // Hentikan eksekusi
+if ($_SESSION['role'] != 'admin') {
+    header('Location: login.php');
+    exit;
 }
 
-// Proses penambahan user
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_user'])) { // Periksa jika ada form untuk menambah user
-    $username = $_POST['username']; // Ambil input username
-    $password = $_POST['password']; // Ambil input password
-    $role = $_POST['role']; // Ambil input role
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_user'])) {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+    $role = $_POST['role'];
 
-    // Query SQL untuk menambah user ke database
     $sql = "INSERT INTO users (username, password, role) VALUES ('$username', '$password', '$role')";
-    if ($conn->query($sql) === TRUE) { // Jika query berhasil
-        $success = "User berhasil ditambahkan."; // tampilkan  pesan sukses
-    } else { // Jika query gagal
-        $error = "Terjadi kesalahan: " . $conn->error; // tampilkan pesan error
+    if ($conn->query($sql) === TRUE) {
+        $success = "User berhasil ditambahkan.";
+    } else {
+        $error = "Terjadi kesalahan: " . $conn->error;
     }
 }
 
-// Proses penghapusan user
-if (isset($_GET['delete_user'])) { // Periksa apakah ada parameter delete_user di URL
-    $user_id = $_GET['delete_user']; // Ambil ID user yang akan dihapus
-    $sql = "DELETE FROM users WHERE id = $user_id"; // Query untuk menghapus user berdasarkan ID
-    if ($conn->query($sql) === TRUE) { // Jika query berhasil
-        $success = "User berhasil dihapus."; // tampilkan pesan sukses
-    } else { // Jika query gagal
-        $error = "Terjadi kesalahan: " . $conn->error; // tampilkan pesan error
+if (isset($_GET['delete_user'])) {
+    $user_id = $_GET['delete_user'];
+    $sql = "DELETE FROM users WHERE id = $user_id";
+    if ($conn->query($sql) === TRUE) {
+        $success = "User berhasil dihapus.";
+    } else {
+        $error = "Terjadi kesalahan: " . $conn->error;
     }
 }
 
-// Ambil daftar semua user dari database
-$sql = "SELECT * FROM users"; // Query untuk mengambil semua user
-$result = $conn->query($sql); // Jalankan query
+$sql = "SELECT * FROM users";
+$result = $conn->query($sql);
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-    <link rel="stylesheet" href="../css/style.css"> 
-    <title>Admin Dashboard</title> 
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+
+    <style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #121212;
+        color: #f5f5f5;
+    }
+
+    .container {
+        width: 80%;
+        max-width: 900px;
+        margin: 50px auto;
+        padding: 30px;
+        background-color: #1e1e1e;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
+    }
+
+    h2, h3 {
+        text-align: center;
+        color: #ff3b3f;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 30px;
+    }
+
+    table th, table td {
+        border: 1px solid #ff3b3f;
+        padding: 10px;
+        text-align: center;
+    }
+
+    table th {
+        background-color: #2a2a2a;
+    }
+
+    table tr:nth-child(even) {
+        background-color: #181818;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    select {
+        width: 100%;
+        padding: 10px;
+        margin: 5px 0 15px;
+        border: 1px solid #444;
+        border-radius: 5px;
+        background-color: #2a2a2a;
+        color: white;
+    }
+
+    input[type="submit"] {
+        background-color: #ff3b3f;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    input[type="submit"]:hover {
+        background-color: #ff1a1e;
+    }
+
+    a {
+        color: #ff3b3f;
+        text-decoration: none;
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+
+    .logo {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .logo img {
+        max-width: 150px;
+        height: auto;
+    }
+
+    .message {
+        text-align: center;
+        margin-bottom: 20px;
+        font-weight: bold;
+    }
+
+    .message.success {
+        color: #00e676;
+    }
+
+    .message.error {
+        color: #ff3b3f;
+    }
+</style>
+
 </head>
 <body>
-<div class="container"> <!-- Container utama -->
+<div class="logo">
+    <img src="../assets/Logo.jpg" alt="Logo"> <!-- Ganti path sesuai lokasi logomu -->
+</div>
+<div class="container">
     <h2>Admin Dashboard</h2>
-    <p>Selamat datang, Admin!</p> 
+    <p>Selamat datang, <strong>Chief</strong>!</p>
 
-    <?php
-    // Menampilkan pesan sukses atau error jika ada
-    if (!empty($success)) echo "<p style='color: green;'>$success</p>";
-    if (!empty($error)) echo "<p style='color: red;'>$error</p>";
-    ?>
+    <?php if (!empty($success)) echo "<div class='success'>$success</div>"; ?>
+    <?php if (!empty($error)) echo "<div class='error'>$error</div>"; ?>
 
-    <h3>Daftar User</h3> <!-- Header daftar user -->
-    <table border="1" cellpadding="8" cellspacing="0" style="width: 100%;"> <!-- Tabel daftar user -->
+    <h3>Daftar User</h3>
+    <table>
         <thead>
-            <tr>
-                <th>ID</th> <!-- Kolom ID -->
-                <th>Username</th> <!-- Kolom username -->
-                <th>Role</th> <!-- Kolom role -->
-                <th>Aksi</th> <!-- Kolom aksi -->
-            </tr>
+        <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Aksi</th>
+        </tr>
         </thead>
         <tbody>
-            <?php while ($row = $result->fetch_assoc()) : ?> <!-- Looping data user dari database -->
+        <?php while ($row = $result->fetch_assoc()) : ?>
             <tr>
-                <td><?= $row['id'] ?></td> <!-- Menampilkan ID user -->
-                <td><?= $row['username'] ?></td> <!-- Menampilkan username -->
-                <td><?= $row['role'] ?></td> <!-- Menampilkan role -->
+                <td><?= $row['id'] ?></td>
+                <td><?= $row['username'] ?></td>
+                <td><?= $row['role'] ?></td>
                 <td>
-                    <!-- Link untuk menghapus user -->
                     <a href="?delete_user=<?= $row['id'] ?>" onclick="return confirm('Yakin ingin menghapus user ini?')">Hapus</a>
                 </td>
             </tr>
-            <?php endwhile; ?> <!-- Akhir looping -->
+        <?php endwhile; ?>
         </tbody>
     </table>
 
-    <h3>Tambah User</h3> <!-- Header form tambah user -->
-    <form method="POST"> 
-        <label>Username</label> <!-- Label input username -->
-        <input type="text" name="username" required> <!-- Input username -->
-        <label>Password</label> <!-- Label input password -->
-        <input type="password" name="password" required> <!-- Input password -->
-        <label>Role</label> <!-- Label input role -->
-        <select name="role" required> <!-- Dropdown untuk memilih role -->
-            <option value="user">User</option> <!-- Pilihan role user -->
-            <option value="admin">Admin</option> <!-- Pilihan role admin -->
+    <h3>Tambah User</h3>
+    <form method="POST">
+        <label>Username</label>
+        <input type="text" name="username" required>
+
+        <label>Password</label>
+        <input type="password" name="password" required>
+
+        <label>Role</label>
+        <select name="role" required>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
         </select>
-        <br><br>
-        <input type="submit" name="add_user" value="Tambah User"> <!-- Tombol submit -->
+
+        <input type="submit" name="add_user" value="Tambah User">
     </form>
 
     <br>
-    <a href="change_password.php">Ganti Password</a> <!-- Link untuk ganti password -->
-    <br><br>
-    <a href="../logout.php">Logout</a> <!-- Link untuk logout -->
+    <a href="change_password.php">Ganti Password</a> |
+  <a href="../logout.php">Logout</a>
 </div>
 </body>
 </html>
